@@ -1,0 +1,10 @@
+[Unit]
+Description=Sensors web server
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python /home/pi/sensors-web/server.py
+
+[Install]
+WantedBy=multi-user.target

@@ -1,9 +1,10 @@
 from flask import Flask, Response, request, send_from_directory
 import json
 import sqlite3
+import sys
 
 app = Flask(__name__)
-conn = sqlite3.connect('sensor-data.db')
+conn = sqlite3.connect(sys.argv[1])
 
 @app.route('/')
 def index():
@@ -19,12 +20,15 @@ def send_css(path):
 
 @app.route("/log", methods = ['GET'])
 def get_log():
-    return Response(json.dumps(read_log()), status=200, mimetype='application/json')
+    return Response(json.dumps(read_log(request.args.get('start'), request.args.get('end'))), status=200, mimetype='application/json')
 
-def read_log():
+def read_log(start, end):
+    if start is None:
+        start = 0
+    if end is None:
+        end = sys.maxint
     c = conn.cursor()
-    timestamp = 0
-    c.execute('SELECT temperature, humidity, co2, timestamp  FROM log WHERE timestamp >= ? ORDER BY timestamp DESC', (timestamp,))
+    c.execute('SELECT temperature, humidity, co2, timestamp  FROM log WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp DESC', (start, end))
     rows = c.fetchall()
     return [{'temperature' : round(row[0], 2), 'humidity' : round(row[1], 2), 'co2' : row[2], 'timestamp' : row[3]} for row in rows]
 

@@ -1,1 +1,23 @@
-index html
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Sensors</title>
+        <link rel="stylesheet" href="css/main.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.1.6/Chart.bundle.min.js"></script>
+        <script src="js/main.js"></script>
+        <script>
+            var storedState = localStorage.getItem('elm-main-state');
+            console.log('stored state', storedState);
+            var startingState = storedState ? JSON.parse(storedState) : null;
+            var main = Elm.Main.fullscreen(startingState);
+            main.ports.setStorage.subscribe(function(state) {
+                console.log('setting state', state);
+                localStorage.setItem('elm-main-state', JSON.stringify(state));
+            });
+        </script>
+    </head>
+    <body>
+        content
+    </body>
+</html>

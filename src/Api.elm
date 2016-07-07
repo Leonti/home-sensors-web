@@ -6,7 +6,7 @@ import Models exposing (..)
 import Task
 
 baseUrl : String
-baseUrl = "http://localhost:5000"
+baseUrl = "http://192.168.0.106:5000"
 
 type Error = Error String
 

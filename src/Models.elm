@@ -1,4 +1,4 @@
-module Models exposing (LogEntry, logsDecoder)
+module Models exposing (LogEntry, logDecoder, logsDecoder)
 
 import Json.Decode exposing ((:=))
 import Json.Decode as Json

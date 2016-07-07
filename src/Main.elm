@@ -9,6 +9,8 @@ import Debug
 
 import Models exposing (LogEntry)
 
+import Current
+
 main : Program (Maybe PersistedModel)
 main =
   App.programWithFlags
@@ -35,6 +37,7 @@ type alias Model =
     { start : Maybe Int
     , end : Maybe Int
     , entries : List LogEntry
+    , currentModel : Current.Model
     }
 
 emptyModel : Model
@@ -42,6 +45,7 @@ emptyModel =
     { start = Nothing
     , end = Nothing
     , entries = []
+    , currentModel = Current.emptyModel
     }
 
 persistedModel : Model -> PersistedModel
@@ -52,8 +56,30 @@ persistedModel model =
 
 init : Maybe PersistedModel -> ( Model, Cmd Msg )
 init maybePersistedModel =
-    (Maybe.withDefault emptyModel (Maybe.map fromPersistedModel maybePersistedModel), Cmd.none)
+    let model =
+        Maybe.withDefault emptyModel (Maybe.map fromPersistedModel maybePersistedModel)
+    in
+        let (updatedModel, cmd) =
+            update FetchLog model
+            (model, newCmd) =
+            initCurrent updatedModel
+        in
+            (model, Cmd.batch [cmd, newCmd])
 
+initCharts : Model -> ( Model, Cmd Msg)
+initCharts model =
+    update FetchLog model
+
+initCurrent : Model -> ( Model, Cmd Msg )
+initCurrent model =
+      let ( currentModel, currentCmd ) =
+        Current.init
+      in
+        ({ model
+            | currentModel = currentModel
+         }
+         , Cmd.map CurrentMsg currentCmd
+        )
 
 fromPersistedModel : PersistedModel -> Model
 fromPersistedModel persistedModel =
@@ -68,6 +94,7 @@ type Msg
     = FetchLog
     | FetchLogSucceed (List LogEntry)
     | FetchLogFail Api.Error
+    | CurrentMsg Current.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -81,14 +108,30 @@ update msg model =
         FetchLogFail error ->
             (model, Cmd.none)
 
+        CurrentMsg message ->
+          let ( currentModelModel, currentCmd ) =
+            Current.update message model.currentModel
+          in
+            ({ model
+                | currentModel = currentModelModel
+             }
+             , Cmd.map CurrentMsg currentCmd
+            )
+
 -- VIEW
 
 view : Model -> Html Msg
 view model =
     div []
-        [ div []
-            [ span [] [text <| toString model]
-            ]
+        [ App.map CurrentMsg (Current.view model.currentModel)
+        , div [] [text "LOG:"]       
+        , div [] (List.map (\entry -> entryRow entry) model.entries)
+        ]
+
+entryRow : LogEntry -> Html Msg
+entryRow entry =
+    div []
+        [ text ((toString entry.temperature) ++ " " ++ toString(entry.humidity) ++ " " ++ toString(entry.co2))
         ]
 
 --subscriptions : Model -> Sub Msg

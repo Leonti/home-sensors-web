@@ -22,6 +22,19 @@ def send_css(path):
 def get_log():
     return Response(json.dumps(read_log(request.args.get('start'), request.args.get('end'))), status=200, mimetype='application/json')
 
+@app.route("/last", methods = ['GET'])
+def get_last():
+    return Response(json.dumps(read_last()), status=200, mimetype='application/json')
+
+def row_to_dict(row):
+    return {'temperature' : round(row[0], 2), 'humidity' : round(row[1], 2), 'co2' : row[2], 'timestamp' : row[3]}
+
+def read_last():
+    c = conn.cursor()
+    c.execute('SELECT temperature, humidity, co2, timestamp FROM log ORDER BY timestamp DESC LIMIT 1')
+    row = c.fetchone()
+    return row_to_dict(row)
+
 def read_log(start, end):
     if start is None:
         start = 0
@@ -30,7 +43,7 @@ def read_log(start, end):
     c = conn.cursor()
     c.execute('SELECT temperature, humidity, co2, timestamp  FROM log WHERE timestamp >= ? AND timestamp <= ? ORDER BY timestamp DESC', (start, end))
     rows = c.fetchall()
-    return [{'temperature' : round(row[0], 2), 'humidity' : round(row[1], 2), 'co2' : row[2], 'timestamp' : row[3]} for row in rows]
+    return [row_to_dict(row) for row in rows]
 
 if __name__ == "__main__":
     try:

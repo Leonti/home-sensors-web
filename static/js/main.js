@@ -8031,7 +8031,7 @@ var _user$project$Api$fetchLogsGet = F2(
 		return A2(
 			_evancz$elm_http$Http$get,
 			_user$project$Models$logsDecoder,
-			A2(_elm_lang$core$Basics_ops['++'], _user$project$Api$baseUrl, '/logs'));
+			A2(_elm_lang$core$Basics_ops['++'], _user$project$Api$baseUrl, '/log'));
 	});
 var _user$project$Api$Error = function (a) {
 	return {ctor: 'Error', _0: a};
@@ -8057,6 +8057,17 @@ var _user$project$Api$transformHttpError = function (httpError) {
 						A2(_elm_lang$core$Basics_ops['++'], ' ', _p0._1))));
 	}
 };
+var _user$project$Api$fetchLast = F2(
+	function (fetchFail, fetchSucceed) {
+		return A3(
+			_elm_lang$core$Task$perform,
+			A2(_user$project$Api$handleError, _user$project$Api$transformHttpError, fetchFail),
+			fetchSucceed,
+			A2(
+				_evancz$elm_http$Http$get,
+				_user$project$Models$logDecoder,
+				A2(_elm_lang$core$Basics_ops['++'], _user$project$Api$baseUrl, '/last')));
+	});
 var _user$project$Api$fetchLogs = F4(
 	function (start, end, fetchFail, fetchSucceed) {
 		return A3(
@@ -8066,7 +8077,7 @@ var _user$project$Api$fetchLogs = F4(
 			A2(_user$project$Api$fetchLogsGet, start, end));
 	});
 
-var _user$project$Main$view = function (model) {
+var _user$project$Current$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8079,16 +8090,77 @@ var _user$project$Main$view = function (model) {
 					[]),
 				_elm_lang$core$Native_List.fromArray(
 					[
+						_elm_lang$html$Html$text(
 						A2(
-						_elm_lang$html$Html$span,
-						_elm_lang$core$Native_List.fromArray(
-							[]),
-						_elm_lang$core$Native_List.fromArray(
-							[
-								_elm_lang$html$Html$text(
-								_elm_lang$core$Basics$toString(model))
-							]))
+							_elm_lang$core$Maybe$withDefault,
+							'',
+							A2(
+								_elm_lang$core$Maybe$map,
+								function (entry) {
+									return _elm_lang$core$Basics$toString(entry.temperature);
+								},
+								model.entry)))
 					]))
+			]));
+};
+var _user$project$Current$emptyModel = {entry: _elm_lang$core$Maybe$Nothing};
+var _user$project$Current$Model = function (a) {
+	return {entry: a};
+};
+var _user$project$Current$FetchFail = function (a) {
+	return {ctor: 'FetchFail', _0: a};
+};
+var _user$project$Current$FetchSucceed = function (a) {
+	return {ctor: 'FetchSucceed', _0: a};
+};
+var _user$project$Current$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'Fetch':
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: A2(_user$project$Api$fetchLast, _user$project$Current$FetchFail, _user$project$Current$FetchSucceed)
+				};
+			case 'FetchSucceed':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{
+							entry: _elm_lang$core$Maybe$Just(_p0._0)
+						}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		}
+	});
+var _user$project$Current$Fetch = {ctor: 'Fetch'};
+var _user$project$Current$init = A2(_user$project$Current$update, _user$project$Current$Fetch, _user$project$Current$emptyModel);
+
+var _user$project$Main$entryRow = function (entry) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text(
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(entry.temperature),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						' ',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_elm_lang$core$Basics$toString(entry.humidity),
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								' ',
+								_elm_lang$core$Basics$toString(entry.co2))))))
 			]));
 };
 var _user$project$Main$persistedModel = function (model) {
@@ -8098,22 +8170,13 @@ var _user$project$Main$emptyModel = {
 	start: _elm_lang$core$Maybe$Nothing,
 	end: _elm_lang$core$Maybe$Nothing,
 	entries: _elm_lang$core$Native_List.fromArray(
-		[])
+		[]),
+	currentModel: _user$project$Current$emptyModel
 };
 var _user$project$Main$fromPersistedModel = function (persistedModel) {
 	return _elm_lang$core$Native_Utils.update(
 		_user$project$Main$emptyModel,
 		{start: persistedModel.start, end: persistedModel.end});
-};
-var _user$project$Main$init = function (maybePersistedModel) {
-	return {
-		ctor: '_Tuple2',
-		_0: A2(
-			_elm_lang$core$Maybe$withDefault,
-			_user$project$Main$emptyModel,
-			A2(_elm_lang$core$Maybe$map, _user$project$Main$fromPersistedModel, maybePersistedModel)),
-		_1: _elm_lang$core$Platform_Cmd$none
-	};
 };
 var _user$project$Main$setStorage = _elm_lang$core$Native_Platform.outgoingPort(
 	'setStorage',
@@ -8142,10 +8205,56 @@ var _user$project$Main$PersistedModel = F2(
 	function (a, b) {
 		return {start: a, end: b};
 	});
-var _user$project$Main$Model = F3(
-	function (a, b, c) {
-		return {start: a, end: b, entries: c};
+var _user$project$Main$Model = F4(
+	function (a, b, c, d) {
+		return {start: a, end: b, entries: c, currentModel: d};
 	});
+var _user$project$Main$CurrentMsg = function (a) {
+	return {ctor: 'CurrentMsg', _0: a};
+};
+var _user$project$Main$initCurrent = function (model) {
+	var _p3 = _user$project$Current$init;
+	var currentModel = _p3._0;
+	var currentCmd = _p3._1;
+	return {
+		ctor: '_Tuple2',
+		_0: _elm_lang$core$Native_Utils.update(
+			model,
+			{currentModel: currentModel}),
+		_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$CurrentMsg, currentCmd)
+	};
+};
+var _user$project$Main$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html_App$map,
+				_user$project$Main$CurrentMsg,
+				_user$project$Current$view(model.currentModel)),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('LOG:')
+					])),
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				A2(
+					_elm_lang$core$List$map,
+					function (entry) {
+						return _user$project$Main$entryRow(entry);
+					},
+					model.entries))
+			]));
+};
 var _user$project$Main$FetchLogFail = function (a) {
 	return {ctor: 'FetchLogFail', _0: a};
 };
@@ -8154,8 +8263,8 @@ var _user$project$Main$FetchLogSucceed = function (a) {
 };
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p3 = A2(_elm_lang$core$Debug$log, 'msg', msg);
-		switch (_p3.ctor) {
+		var _p4 = A2(_elm_lang$core$Debug$log, 'msg', msg);
+		switch (_p4.ctor) {
 			case 'FetchLog':
 				return {
 					ctor: '_Tuple2',
@@ -8167,13 +8276,44 @@ var _user$project$Main$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{entries: _p3._0}),
+						{entries: _p4._0}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
-			default:
+			case 'FetchLogFail':
 				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			default:
+				var _p5 = A2(_user$project$Current$update, _p4._0, model.currentModel);
+				var currentModelModel = _p5._0;
+				var currentCmd = _p5._1;
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{currentModel: currentModelModel}),
+					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$CurrentMsg, currentCmd)
+				};
 		}
 	});
+var _user$project$Main$FetchLog = {ctor: 'FetchLog'};
+var _user$project$Main$init = function (maybePersistedModel) {
+	var model = A2(
+		_elm_lang$core$Maybe$withDefault,
+		_user$project$Main$emptyModel,
+		A2(_elm_lang$core$Maybe$map, _user$project$Main$fromPersistedModel, maybePersistedModel));
+	var _p6 = A2(_user$project$Main$update, _user$project$Main$FetchLog, model);
+	var updatedModel = _p6._0;
+	var cmd = _p6._1;
+	var _p7 = _user$project$Main$initCurrent(updatedModel);
+	var model = _p7._0;
+	var newCmd = _p7._1;
+	return {
+		ctor: '_Tuple2',
+		_0: model,
+		_1: _elm_lang$core$Platform_Cmd$batch(
+			_elm_lang$core$Native_List.fromArray(
+				[cmd, newCmd]))
+	};
+};
 var _user$project$Main$main = {
 	main: _elm_lang$html$Html_App$programWithFlags(
 		{
@@ -8187,7 +8327,7 @@ var _user$project$Main$main = {
 							'model',
 							A2(_user$project$Main$update, msg, model)));
 				}),
-			subscriptions: function (_p4) {
+			subscriptions: function (_p8) {
 				return _elm_lang$core$Platform_Sub$none;
 			}
 		}),
@@ -8228,7 +8368,9 @@ var _user$project$Main$main = {
 					}))
 			]))
 };
-var _user$project$Main$FetchLog = {ctor: 'FetchLog'};
+var _user$project$Main$initCharts = function (model) {
+	return A2(_user$project$Main$update, _user$project$Main$FetchLog, model);
+};
 
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};

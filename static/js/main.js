@@ -8097,7 +8097,19 @@ var _user$project$Current$view = function (model) {
 							A2(
 								_elm_lang$core$Maybe$map,
 								function (entry) {
-									return _elm_lang$core$Basics$toString(entry.temperature);
+									return A2(
+										_elm_lang$core$Basics_ops['++'],
+										_elm_lang$core$Basics$toString(entry.temperature),
+										A2(
+											_elm_lang$core$Basics_ops['++'],
+											' ',
+											A2(
+												_elm_lang$core$Basics_ops['++'],
+												_elm_lang$core$Basics$toString(entry.humidity),
+												A2(
+													_elm_lang$core$Basics_ops['++'],
+													' ',
+													_elm_lang$core$Basics$toString(entry.co2)))));
 								},
 								model.entry)))
 					]))

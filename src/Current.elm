@@ -41,5 +41,5 @@ view : Model -> Html Msg
 view model =
   div []
         [ div []
-            [text <| Maybe.withDefault "" <| Maybe.map (\entry -> toString entry.temperature) model.entry]
+            [text <| Maybe.withDefault "" <| Maybe.map (\entry -> (toString entry.temperature) ++ " " ++ toString(entry.humidity) ++ " " ++ toString(entry.co2)) model.entry]
         ]

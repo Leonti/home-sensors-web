@@ -4,12 +4,10 @@ import Html exposing (..)
 import Html.App as App
 --import Html.Events exposing (..)
 --import Html.Attributes
-import Api
 import Debug
 
-import Models exposing (LogEntry)
-
 import Current
+import Charts
 
 main : Program (Maybe PersistedModel)
 main =
@@ -34,86 +32,62 @@ type alias PersistedModel =
     }
 
 type alias Model =
-    { start : Maybe Int
-    , end : Maybe Int
-    , entries : List LogEntry
-    , currentModel : Current.Model
+    { currentModel : Current.Model
+    , chartsModel : Charts.Model
     }
 
-emptyModel : Model
-emptyModel =
-    { start = Nothing
-    , end = Nothing
-    , entries = []
-    , currentModel = Current.emptyModel
-    }
+emptyPersistedModel : PersistedModel
+emptyPersistedModel =
+                { start = Nothing
+                , end = Nothing
+                }
 
 persistedModel : Model -> PersistedModel
 persistedModel model =
-    { start = model.start
-    , end = model.end
+    { start = Charts.start model.chartsModel
+    , end = Charts.end model.chartsModel
     }
 
 init : Maybe PersistedModel -> ( Model, Cmd Msg )
 init maybePersistedModel =
-    let model =
-        Maybe.withDefault emptyModel (Maybe.map fromPersistedModel maybePersistedModel)
+    let
+        persistedModel = Maybe.withDefault emptyPersistedModel maybePersistedModel
+        (currentModel, currentCmd) = Current.init
+        (chartsModel, chartsCmd) = Charts.init persistedModel.start persistedModel.end
+        model =
+            { currentModel = currentModel
+            , chartsModel = chartsModel
+            }
+        cmd =
+            Cmd.batch [(Cmd.map CurrentMsg currentCmd), (Cmd.map ChartsMsg chartsCmd)]
     in
-        let (updatedModel, cmd) =
-            update FetchLog model
-            (model, newCmd) =
-            initCurrent updatedModel
-        in
-            (model, Cmd.batch [cmd, newCmd])
-
-initCharts : Model -> ( Model, Cmd Msg)
-initCharts model =
-    update FetchLog model
-
-initCurrent : Model -> ( Model, Cmd Msg )
-initCurrent model =
-      let ( currentModel, currentCmd ) =
-        Current.init
-      in
-        ({ model
-            | currentModel = currentModel
-         }
-         , Cmd.map CurrentMsg currentCmd
-        )
-
-fromPersistedModel : PersistedModel -> Model
-fromPersistedModel persistedModel =
-    { emptyModel
-        | start = persistedModel.start
-        , end = persistedModel.end
-    }
+        (model, cmd)
 
 -- UPDATE
 
 type Msg
-    = FetchLog
-    | FetchLogSucceed (List LogEntry)
-    | FetchLogFail Api.Error
-    | CurrentMsg Current.Msg
+    = CurrentMsg Current.Msg
+    | ChartsMsg Charts.Msg
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case (Debug.log "msg" msg) of
-        FetchLog ->
-            (model, Api.fetchLogs model.start model.end FetchLogFail FetchLogSucceed)
-
-        FetchLogSucceed entries ->
-            ({model | entries = entries}, Cmd.none)
-
-        FetchLogFail error ->
-            (model, Cmd.none)
+        ChartsMsg message ->
+          let ( chartsModel, chartsCmd ) =
+            Charts.update message model.chartsModel
+          in
+            ({ model
+                | chartsModel = chartsModel
+             }
+             , Cmd.map ChartsMsg chartsCmd
+            )
 
         CurrentMsg message ->
-          let ( currentModelModel, currentCmd ) =
+          let ( currentModel, currentCmd ) =
             Current.update message model.currentModel
           in
             ({ model
-                | currentModel = currentModelModel
+                | currentModel = currentModel
              }
              , Cmd.map CurrentMsg currentCmd
             )
@@ -124,14 +98,8 @@ view : Model -> Html Msg
 view model =
     div []
         [ App.map CurrentMsg (Current.view model.currentModel)
-        , div [] [text "LOG:"]       
-        , div [] (List.map (\entry -> entryRow entry) model.entries)
-        ]
-
-entryRow : LogEntry -> Html Msg
-entryRow entry =
-    div []
-        [ text ((toString entry.temperature) ++ " " ++ toString(entry.humidity) ++ " " ++ toString(entry.co2))
+        , div [] [text "LOG:"]
+        , App.map ChartsMsg (Charts.view model.chartsModel)
         ]
 
 --subscriptions : Model -> Sub Msg

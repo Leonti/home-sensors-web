@@ -8025,7 +8025,7 @@ var _user$project$Api$handleError = F3(
 		return toMsg(
 			toError(httpError));
 	});
-var _user$project$Api$baseUrl = 'http://192.168.0.106:5000';
+var _user$project$Api$baseUrl = '';
 var _user$project$Api$fetchLogsGet = F2(
 	function (start, end) {
 		return A2(
@@ -8075,6 +8075,100 @@ var _user$project$Api$fetchLogs = F4(
 			A2(_user$project$Api$handleError, _user$project$Api$transformHttpError, fetchFail),
 			fetchSucceed,
 			A2(_user$project$Api$fetchLogsGet, start, end));
+	});
+
+var _user$project$Charts$entryRow = function (entry) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				_elm_lang$html$Html$text(
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					_elm_lang$core$Basics$toString(entry.temperature),
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						' ',
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							_elm_lang$core$Basics$toString(entry.humidity),
+							A2(
+								_elm_lang$core$Basics_ops['++'],
+								' ',
+								_elm_lang$core$Basics$toString(entry.co2))))))
+			]));
+};
+var _user$project$Charts$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$div,
+				_elm_lang$core$Native_List.fromArray(
+					[]),
+				A2(
+					_elm_lang$core$List$map,
+					function (entry) {
+						return _user$project$Charts$entryRow(entry);
+					},
+					model.entries))
+			]));
+};
+var _user$project$Charts$end = function (model) {
+	return model.end;
+};
+var _user$project$Charts$start = function (model) {
+	return model.start;
+};
+var _user$project$Charts$Model = F3(
+	function (a, b, c) {
+		return {entries: a, start: b, end: c};
+	});
+var _user$project$Charts$FetchFail = function (a) {
+	return {ctor: 'FetchFail', _0: a};
+};
+var _user$project$Charts$FetchSucceed = function (a) {
+	return {ctor: 'FetchSucceed', _0: a};
+};
+var _user$project$Charts$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'Fetch':
+				return {
+					ctor: '_Tuple2',
+					_0: model,
+					_1: A4(_user$project$Api$fetchLogs, model.start, model.end, _user$project$Charts$FetchFail, _user$project$Charts$FetchSucceed)
+				};
+			case 'FetchSucceed':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{entries: _p0._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		}
+	});
+var _user$project$Charts$Fetch = {ctor: 'Fetch'};
+var _user$project$Charts$init = F2(
+	function (start, end) {
+		return A2(
+			_user$project$Charts$update,
+			_user$project$Charts$Fetch,
+			{
+				entries: _elm_lang$core$Native_List.fromArray(
+					[]),
+				start: start,
+				end: end
+			});
 	});
 
 var _user$project$Current$view = function (model) {
@@ -8152,44 +8246,13 @@ var _user$project$Current$update = F2(
 var _user$project$Current$Fetch = {ctor: 'Fetch'};
 var _user$project$Current$init = A2(_user$project$Current$update, _user$project$Current$Fetch, _user$project$Current$emptyModel);
 
-var _user$project$Main$entryRow = function (entry) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				_elm_lang$html$Html$text(
-				A2(
-					_elm_lang$core$Basics_ops['++'],
-					_elm_lang$core$Basics$toString(entry.temperature),
-					A2(
-						_elm_lang$core$Basics_ops['++'],
-						' ',
-						A2(
-							_elm_lang$core$Basics_ops['++'],
-							_elm_lang$core$Basics$toString(entry.humidity),
-							A2(
-								_elm_lang$core$Basics_ops['++'],
-								' ',
-								_elm_lang$core$Basics$toString(entry.co2))))))
-			]));
-};
 var _user$project$Main$persistedModel = function (model) {
-	return {start: model.start, end: model.end};
+	return {
+		start: _user$project$Charts$start(model.chartsModel),
+		end: _user$project$Charts$end(model.chartsModel)
+	};
 };
-var _user$project$Main$emptyModel = {
-	start: _elm_lang$core$Maybe$Nothing,
-	end: _elm_lang$core$Maybe$Nothing,
-	entries: _elm_lang$core$Native_List.fromArray(
-		[]),
-	currentModel: _user$project$Current$emptyModel
-};
-var _user$project$Main$fromPersistedModel = function (persistedModel) {
-	return _elm_lang$core$Native_Utils.update(
-		_user$project$Main$emptyModel,
-		{start: persistedModel.start, end: persistedModel.end});
-};
+var _user$project$Main$emptyPersistedModel = {start: _elm_lang$core$Maybe$Nothing, end: _elm_lang$core$Maybe$Nothing};
 var _user$project$Main$setStorage = _elm_lang$core$Native_Platform.outgoingPort(
 	'setStorage',
 	function (v) {
@@ -8217,25 +8280,60 @@ var _user$project$Main$PersistedModel = F2(
 	function (a, b) {
 		return {start: a, end: b};
 	});
-var _user$project$Main$Model = F4(
-	function (a, b, c, d) {
-		return {start: a, end: b, entries: c, currentModel: d};
+var _user$project$Main$Model = F2(
+	function (a, b) {
+		return {currentModel: a, chartsModel: b};
 	});
+var _user$project$Main$ChartsMsg = function (a) {
+	return {ctor: 'ChartsMsg', _0: a};
+};
 var _user$project$Main$CurrentMsg = function (a) {
 	return {ctor: 'CurrentMsg', _0: a};
 };
-var _user$project$Main$initCurrent = function (model) {
+var _user$project$Main$init = function (maybePersistedModel) {
 	var _p3 = _user$project$Current$init;
 	var currentModel = _p3._0;
 	var currentCmd = _p3._1;
-	return {
-		ctor: '_Tuple2',
-		_0: _elm_lang$core$Native_Utils.update(
-			model,
-			{currentModel: currentModel}),
-		_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$CurrentMsg, currentCmd)
-	};
+	var persistedModel = A2(_elm_lang$core$Maybe$withDefault, _user$project$Main$emptyPersistedModel, maybePersistedModel);
+	var _p4 = A2(_user$project$Charts$init, persistedModel.start, persistedModel.end);
+	var chartsModel = _p4._0;
+	var chartsCmd = _p4._1;
+	var model = {currentModel: currentModel, chartsModel: chartsModel};
+	var cmd = _elm_lang$core$Platform_Cmd$batch(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$CurrentMsg, currentCmd),
+				A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$ChartsMsg, chartsCmd)
+			]));
+	return {ctor: '_Tuple2', _0: model, _1: cmd};
 };
+var _user$project$Main$update = F2(
+	function (msg, model) {
+		var _p5 = A2(_elm_lang$core$Debug$log, 'msg', msg);
+		if (_p5.ctor === 'ChartsMsg') {
+			var _p6 = A2(_user$project$Charts$update, _p5._0, model.chartsModel);
+			var chartsModel = _p6._0;
+			var chartsCmd = _p6._1;
+			return {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{chartsModel: chartsModel}),
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$ChartsMsg, chartsCmd)
+			};
+		} else {
+			var _p7 = A2(_user$project$Current$update, _p5._0, model.currentModel);
+			var currentModel = _p7._0;
+			var currentCmd = _p7._1;
+			return {
+				ctor: '_Tuple2',
+				_0: _elm_lang$core$Native_Utils.update(
+					model,
+					{currentModel: currentModel}),
+				_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$CurrentMsg, currentCmd)
+			};
+		}
+	});
 var _user$project$Main$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
@@ -8256,75 +8354,10 @@ var _user$project$Main$view = function (model) {
 						_elm_lang$html$Html$text('LOG:')
 					])),
 				A2(
-				_elm_lang$html$Html$div,
-				_elm_lang$core$Native_List.fromArray(
-					[]),
-				A2(
-					_elm_lang$core$List$map,
-					function (entry) {
-						return _user$project$Main$entryRow(entry);
-					},
-					model.entries))
+				_elm_lang$html$Html_App$map,
+				_user$project$Main$ChartsMsg,
+				_user$project$Charts$view(model.chartsModel))
 			]));
-};
-var _user$project$Main$FetchLogFail = function (a) {
-	return {ctor: 'FetchLogFail', _0: a};
-};
-var _user$project$Main$FetchLogSucceed = function (a) {
-	return {ctor: 'FetchLogSucceed', _0: a};
-};
-var _user$project$Main$update = F2(
-	function (msg, model) {
-		var _p4 = A2(_elm_lang$core$Debug$log, 'msg', msg);
-		switch (_p4.ctor) {
-			case 'FetchLog':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: A4(_user$project$Api$fetchLogs, model.start, model.end, _user$project$Main$FetchLogFail, _user$project$Main$FetchLogSucceed)
-				};
-			case 'FetchLogSucceed':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{entries: _p4._0}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			case 'FetchLogFail':
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
-			default:
-				var _p5 = A2(_user$project$Current$update, _p4._0, model.currentModel);
-				var currentModelModel = _p5._0;
-				var currentCmd = _p5._1;
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{currentModel: currentModelModel}),
-					_1: A2(_elm_lang$core$Platform_Cmd$map, _user$project$Main$CurrentMsg, currentCmd)
-				};
-		}
-	});
-var _user$project$Main$FetchLog = {ctor: 'FetchLog'};
-var _user$project$Main$init = function (maybePersistedModel) {
-	var model = A2(
-		_elm_lang$core$Maybe$withDefault,
-		_user$project$Main$emptyModel,
-		A2(_elm_lang$core$Maybe$map, _user$project$Main$fromPersistedModel, maybePersistedModel));
-	var _p6 = A2(_user$project$Main$update, _user$project$Main$FetchLog, model);
-	var updatedModel = _p6._0;
-	var cmd = _p6._1;
-	var _p7 = _user$project$Main$initCurrent(updatedModel);
-	var model = _p7._0;
-	var newCmd = _p7._1;
-	return {
-		ctor: '_Tuple2',
-		_0: model,
-		_1: _elm_lang$core$Platform_Cmd$batch(
-			_elm_lang$core$Native_List.fromArray(
-				[cmd, newCmd]))
-	};
 };
 var _user$project$Main$main = {
 	main: _elm_lang$html$Html_App$programWithFlags(
@@ -8379,9 +8412,6 @@ var _user$project$Main$main = {
 							});
 					}))
 			]))
-};
-var _user$project$Main$initCharts = function (model) {
-	return A2(_user$project$Main$update, _user$project$Main$FetchLog, model);
 };
 
 var Elm = {};

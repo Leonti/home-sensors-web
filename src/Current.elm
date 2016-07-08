@@ -1,4 +1,4 @@
-module Current exposing (Model, Msg, emptyModel, init, update, view)
+module Current exposing (Model, Msg, init, update, view)
 
 import Html exposing (..)
 --import Html.Attributes exposing (..)
@@ -11,14 +11,15 @@ type alias Model =
   { entry : Maybe LogEntry
   }
 
-init : (Model, Cmd Msg)
-init =
-    update Fetch emptyModel
 
 emptyModel : Model
 emptyModel =
     { entry = Nothing
     }
+
+init : (Model, Cmd Msg)
+init =
+    update Fetch emptyModel
 
 type Msg
     = Fetch

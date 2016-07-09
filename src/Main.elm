@@ -9,6 +9,8 @@ import Debug
 import Current
 import Charts
 
+import Models exposing (LogRange(..), stringToRange, rangeToString)
+
 main : Program (Maybe PersistedModel)
 main =
   App.programWithFlags
@@ -27,7 +29,7 @@ withSetStorage (model, cmds) =
 
 -- MODEL
 type alias PersistedModel =
-    { start : Maybe Int
+    { range : String
     , end : Maybe Int
     }
 
@@ -38,13 +40,13 @@ type alias Model =
 
 emptyPersistedModel : PersistedModel
 emptyPersistedModel =
-                { start = Nothing
+                { range = "HOUR"
                 , end = Nothing
                 }
 
 persistedModel : Model -> PersistedModel
 persistedModel model =
-    { start = Charts.start model.chartsModel
+    { range = rangeToString <| Charts.range model.chartsModel
     , end = Charts.end model.chartsModel
     }
 
@@ -53,7 +55,7 @@ init maybePersistedModel =
     let
         persistedModel = Maybe.withDefault emptyPersistedModel maybePersistedModel
         (currentModel, currentCmd) = Current.init
-        (chartsModel, chartsCmd) = Charts.init persistedModel.start persistedModel.end
+        (chartsModel, chartsCmd) = Charts.init (stringToRange persistedModel.range) persistedModel.end
         model =
             { currentModel = currentModel
             , chartsModel = chartsModel

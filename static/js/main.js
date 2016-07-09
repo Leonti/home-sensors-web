@@ -8007,6 +8007,14 @@ var _evancz$elm_http$Http$post = F3(
 			A2(_evancz$elm_http$Http$send, _evancz$elm_http$Http$defaultSettings, request));
 	});
 
+var _user$project$Models$rangeToString = function (range) {
+	var _p0 = range;
+	if (_p0.ctor === 'Hour') {
+		return 'Hour';
+	} else {
+		return 'Day';
+	}
+};
 var _user$project$Models$LogEntry = F4(
 	function (a, b, c, d) {
 		return {temperature: a, humidity: b, co2: c, timestamp: d};
@@ -8019,19 +8027,55 @@ var _user$project$Models$logDecoder = A5(
 	A2(_elm_lang$core$Json_Decode_ops[':='], 'co2', _elm_lang$core$Json_Decode$int),
 	A2(_elm_lang$core$Json_Decode_ops[':='], 'timestamp', _elm_lang$core$Json_Decode$int));
 var _user$project$Models$logsDecoder = _elm_lang$core$Json_Decode$list(_user$project$Models$logDecoder);
+var _user$project$Models$Day = {ctor: 'Day'};
+var _user$project$Models$Hour = {ctor: 'Hour'};
+var _user$project$Models$stringToRange = function (range) {
+	var _p1 = range;
+	switch (_p1) {
+		case 'Hour':
+			return _user$project$Models$Hour;
+		case 'Day':
+			return _user$project$Models$Day;
+		default:
+			return _user$project$Models$Hour;
+	}
+};
 
 var _user$project$Api$handleError = F3(
 	function (toError, toMsg, httpError) {
 		return toMsg(
 			toError(httpError));
 	});
+var _user$project$Api$toStringTime = function (time) {
+	return A2(
+		_elm_lang$core$Maybe$withDefault,
+		'',
+		A2(
+			_elm_lang$core$Maybe$map,
+			function (t) {
+				return _elm_lang$core$Basics$toString(t);
+			},
+			time));
+};
 var _user$project$Api$baseUrl = '';
 var _user$project$Api$fetchLogsGet = F2(
 	function (start, end) {
 		return A2(
 			_evancz$elm_http$Http$get,
 			_user$project$Models$logsDecoder,
-			A2(_elm_lang$core$Basics_ops['++'], _user$project$Api$baseUrl, '/log'));
+			A2(
+				_elm_lang$core$Basics_ops['++'],
+				_user$project$Api$baseUrl,
+				A2(
+					_elm_lang$core$Basics_ops['++'],
+					'/log?start=',
+					A2(
+						_elm_lang$core$Basics_ops['++'],
+						_user$project$Api$toStringTime(start),
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'&end=',
+							_user$project$Api$toStringTime(end))))));
 	});
 var _user$project$Api$Error = function (a) {
 	return {ctor: 'Error', _0: a};
@@ -8116,18 +8160,53 @@ var _user$project$Charts$view = function (model) {
 					function (entry) {
 						return _user$project$Charts$entryRow(entry);
 					},
-					model.entries))
+					model.entries)),
+				_elm_lang$html$Html$text(
+				_elm_lang$core$Basics$toString(model.end))
 			]));
+};
+var _user$project$Charts$rangeToSeconds = function (range) {
+	var _p0 = range;
+	if (_p0.ctor === 'Hour') {
+		return 3600;
+	} else {
+		return 3600 * 24;
+	}
+};
+var _user$project$Charts$start = function (model) {
+	return A2(
+		_elm_lang$core$Maybe$map,
+		function (end) {
+			return end - _user$project$Charts$rangeToSeconds(model.range);
+		},
+		model.end);
 };
 var _user$project$Charts$end = function (model) {
 	return model.end;
 };
-var _user$project$Charts$start = function (model) {
-	return model.start;
+var _user$project$Charts$range = function (model) {
+	return model.range;
 };
 var _user$project$Charts$Model = F3(
 	function (a, b, c) {
-		return {entries: a, start: b, end: c};
+		return {entries: a, range: b, end: c};
+	});
+var _user$project$Charts$TimeFail = function (a) {
+	return {ctor: 'TimeFail', _0: a};
+};
+var _user$project$Charts$CurrentTime = function (a) {
+	return {ctor: 'CurrentTime', _0: a};
+};
+var _user$project$Charts$init = F2(
+	function (range, end) {
+		var cmd = A3(_elm_lang$core$Task$perform, _user$project$Charts$TimeFail, _user$project$Charts$CurrentTime, _elm_lang$core$Time$now);
+		var model = {
+			entries: _elm_lang$core$Native_List.fromArray(
+				[]),
+			range: range,
+			end: end
+		};
+		return {ctor: '_Tuple2', _0: model, _1: cmd};
 	});
 var _user$project$Charts$FetchFail = function (a) {
 	return {ctor: 'FetchFail', _0: a};
@@ -8135,40 +8214,51 @@ var _user$project$Charts$FetchFail = function (a) {
 var _user$project$Charts$FetchSucceed = function (a) {
 	return {ctor: 'FetchSucceed', _0: a};
 };
+var _user$project$Charts$Fetch = {ctor: 'Fetch'};
 var _user$project$Charts$update = F2(
 	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
-			case 'Fetch':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: A4(_user$project$Api$fetchLogs, model.start, model.end, _user$project$Charts$FetchFail, _user$project$Charts$FetchSucceed)
-				};
-			case 'FetchSucceed':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
+		update:
+		while (true) {
+			var _p1 = msg;
+			switch (_p1.ctor) {
+				case 'Fetch':
+					return {
+						ctor: '_Tuple2',
+						_0: model,
+						_1: A4(
+							_user$project$Api$fetchLogs,
+							_user$project$Charts$start(model),
+							model.end,
+							_user$project$Charts$FetchFail,
+							_user$project$Charts$FetchSucceed)
+					};
+				case 'FetchSucceed':
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{entries: _p1._0}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				case 'FetchFail':
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				case 'CurrentTime':
+					var modelWithTime = _elm_lang$core$Native_Utils.update(
 						model,
-						{entries: _p0._0}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			default:
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+						{
+							end: _elm_lang$core$Maybe$Just(
+								_elm_lang$core$Basics$round(
+									_elm_lang$core$Time$inSeconds(_p1._0)))
+						});
+					var _v2 = _user$project$Charts$Fetch,
+						_v3 = modelWithTime;
+					msg = _v2;
+					model = _v3;
+					continue update;
+				default:
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+			}
 		}
-	});
-var _user$project$Charts$Fetch = {ctor: 'Fetch'};
-var _user$project$Charts$init = F2(
-	function (start, end) {
-		return A2(
-			_user$project$Charts$update,
-			_user$project$Charts$Fetch,
-			{
-				entries: _elm_lang$core$Native_List.fromArray(
-					[]),
-				start: start,
-				end: end
-			});
 	});
 
 var _user$project$Current$view = function (model) {
@@ -8248,16 +8338,17 @@ var _user$project$Current$init = A2(_user$project$Current$update, _user$project$
 
 var _user$project$Main$persistedModel = function (model) {
 	return {
-		start: _user$project$Charts$start(model.chartsModel),
+		range: _user$project$Models$rangeToString(
+			_user$project$Charts$range(model.chartsModel)),
 		end: _user$project$Charts$end(model.chartsModel)
 	};
 };
-var _user$project$Main$emptyPersistedModel = {start: _elm_lang$core$Maybe$Nothing, end: _elm_lang$core$Maybe$Nothing};
+var _user$project$Main$emptyPersistedModel = {range: 'HOUR', end: _elm_lang$core$Maybe$Nothing};
 var _user$project$Main$setStorage = _elm_lang$core$Native_Platform.outgoingPort(
 	'setStorage',
 	function (v) {
 		return {
-			start: (v.start.ctor === 'Nothing') ? null : v.start._0,
+			range: v.range,
 			end: (v.end.ctor === 'Nothing') ? null : v.end._0
 		};
 	});
@@ -8278,7 +8369,7 @@ var _user$project$Main$withSetStorage = function (_p0) {
 };
 var _user$project$Main$PersistedModel = F2(
 	function (a, b) {
-		return {start: a, end: b};
+		return {range: a, end: b};
 	});
 var _user$project$Main$Model = F2(
 	function (a, b) {
@@ -8295,7 +8386,10 @@ var _user$project$Main$init = function (maybePersistedModel) {
 	var currentModel = _p3._0;
 	var currentCmd = _p3._1;
 	var persistedModel = A2(_elm_lang$core$Maybe$withDefault, _user$project$Main$emptyPersistedModel, maybePersistedModel);
-	var _p4 = A2(_user$project$Charts$init, persistedModel.start, persistedModel.end);
+	var _p4 = A2(
+		_user$project$Charts$init,
+		_user$project$Models$stringToRange(persistedModel.range),
+		persistedModel.end);
 	var chartsModel = _p4._0;
 	var chartsCmd = _p4._1;
 	var model = {currentModel: currentModel, chartsModel: chartsModel};
@@ -8397,18 +8491,10 @@ var _user$project$Main$main = {
 					function (end) {
 						return A2(
 							_elm_lang$core$Json_Decode$andThen,
-							A2(
-								_elm_lang$core$Json_Decode_ops[':='],
-								'start',
-								_elm_lang$core$Json_Decode$oneOf(
-									_elm_lang$core$Native_List.fromArray(
-										[
-											_elm_lang$core$Json_Decode$null(_elm_lang$core$Maybe$Nothing),
-											A2(_elm_lang$core$Json_Decode$map, _elm_lang$core$Maybe$Just, _elm_lang$core$Json_Decode$int)
-										]))),
-							function (start) {
+							A2(_elm_lang$core$Json_Decode_ops[':='], 'range', _elm_lang$core$Json_Decode$string),
+							function (range) {
 								return _elm_lang$core$Json_Decode$succeed(
-									{end: end, start: start});
+									{end: end, range: range});
 							});
 					}))
 			]))

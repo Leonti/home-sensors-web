@@ -1,7 +1,24 @@
-module Models exposing (LogEntry, logDecoder, logsDecoder)
+module Models exposing (LogEntry, LogRange(..), logDecoder, logsDecoder, rangeToString, stringToRange)
 
 import Json.Decode exposing ((:=))
 import Json.Decode as Json
+
+type LogRange
+    = Hour
+    | Day
+
+rangeToString : LogRange -> String
+rangeToString range =
+    case range of
+        Hour -> "Hour"
+        Day -> "Day"
+
+stringToRange : String -> LogRange
+stringToRange range =
+    case range of
+        "Hour" -> Hour
+        "Day" -> Day
+        _ -> Hour
 
 type alias LogEntry =
     { temperature : Float

@@ -20,7 +20,10 @@ fetchLogs start end fetchFail fetchSucceed =
 
 fetchLogsGet : Maybe Int -> Maybe Int -> Task.Task Http.Error (List LogEntry)
 fetchLogsGet start end =
-    Http.get Models.logsDecoder (baseUrl ++ "/log")
+    Http.get Models.logsDecoder (baseUrl ++ "/log?start=" ++ (toStringTime start) ++ "&end=" ++ (toStringTime end))
+
+toStringTime : Maybe Int -> String
+toStringTime time = (Maybe.withDefault "" (Maybe.map (\t -> toString t) time))
 
 handleError : (Http.Error -> Error) -> (Error -> msg) -> Http.Error -> msg
 handleError toError toMsg httpError = toMsg <| toError httpError

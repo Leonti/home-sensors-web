@@ -1,9 +1,13 @@
 from flask import Flask, Response, request, send_from_directory
+from flask_cors import CORS, cross_origin
 import json
 import sqlite3
 import sys
 
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
+
 conn = sqlite3.connect(sys.argv[1])
 
 @app.route('/')

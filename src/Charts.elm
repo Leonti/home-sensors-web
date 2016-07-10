@@ -1,7 +1,7 @@
-module Charts exposing (Model, Msg, init, update, view, range, end)
+port module Charts exposing (Model, Msg, init, update, view, range, end)
 
 import Html exposing (..)
---import Html.Attributes exposing (..)
+import Html.Attributes exposing (..)
 --import Html.Events exposing (..)
 
 import Task
@@ -52,6 +52,7 @@ type Msg
     | FetchFail Api.Error
     | CurrentTime Time.Time
     | TimeFail String
+    | DrawCharts
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -60,7 +61,7 @@ update msg model =
             (model, Api.fetchLogs (start model) model.end FetchFail FetchSucceed)
 
         FetchSucceed entries ->
-            ({model | entries = entries}, Cmd.none)
+            update DrawCharts {model | entries = entries}
 
         FetchFail error ->
             (model, Cmd.none)
@@ -77,15 +78,50 @@ update msg model =
         TimeFail error ->
             (model, Cmd.none)
 
+        DrawCharts ->
+            let
+                cmd = drawChart
+                    { entries = (List.map (\e -> ChartValue e.temperature e.timestamp) <| List.reverse model.entries)
+                    , canvasId = "temperature"
+                    }
+                cmd2 = drawChart
+                    { entries = (List.map (\e -> ChartValue e.humidity e.timestamp) <| List.reverse model.entries)
+                    , canvasId = "humidity"
+                    }
+                cmd3 = drawChart
+                    { entries = (List.map (\e -> ChartValue (toFloat e.co2) e.timestamp) <| List.reverse model.entries)
+                    , canvasId = "co2"
+                    }
+            in
+                (model, Cmd.batch [ cmd, cmd2, cmd3 ])
+
 view : Model -> Html Msg
 view model =
-  div []
-        [ div [] (List.map (\entry -> entryRow entry) model.entries)
-        , text <| toString <| model.end
+  div [ class "row" ]
+        [ div [ class "col s12" ]
+            [ chartView "Temperature" "temperature"
+            , chartView "Humidity" "humidity"
+            , chartView "CO2" "co2"
+            ]
         ]
 
-entryRow : LogEntry -> Html Msg
-entryRow entry =
-    div []
-        [ text ((toString entry.temperature) ++ " " ++ toString(entry.humidity) ++ " " ++ toString(entry.co2))
+type alias ChartValue =
+    { value : Float
+    , timestamp : Int
+    }
+
+type alias ChartData =
+    { entries : List ChartValue
+    , canvasId : String
+    }
+
+port drawChart : ChartData -> Cmd msg
+
+chartView : String -> String -> Html Msg
+chartView caption canvasId =
+    div [ class "card-panel" ]
+        [ h3 [] [ text caption ]
+        , div [ class "chart-container" ]
+            [ canvas [ id canvasId, class "chart" ] []
+            ]
         ]

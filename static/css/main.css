@@ -1,1 +1,7 @@
-main css
+.chart {
+    width: 100%;
+}
+
+.chart-container {
+    height: 400px;
+}

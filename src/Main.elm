@@ -3,7 +3,7 @@ port module Main exposing (..)
 import Html exposing (..)
 import Html.App as App
 --import Html.Events exposing (..)
---import Html.Attributes
+import Html.Attributes exposing (..)
 import Debug
 
 import Current
@@ -40,7 +40,7 @@ type alias Model =
 
 emptyPersistedModel : PersistedModel
 emptyPersistedModel =
-                { range = "HOUR"
+                { range = "Hour"
                 , end = Nothing
                 }
 
@@ -98,9 +98,8 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
+    div [ id "container" ]
         [ App.map CurrentMsg (Current.view model.currentModel)
-        , div [] [text "LOG:"]
         , App.map ChartsMsg (Charts.view model.chartsModel)
         ]
 

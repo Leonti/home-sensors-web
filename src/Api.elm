@@ -6,8 +6,8 @@ import Models exposing (..)
 import Task
 
 baseUrl : String
---baseUrl = "http://192.168.0.106:5000"
-baseUrl = ""
+baseUrl = "http://192.168.0.106:5000"
+--baseUrl = ""
 
 type Error = Error String
 

@@ -1,8 +1,10 @@
-module Current exposing (Model, Msg, init, update, view)
+module Current exposing (Model, Msg, init, update, view, subscriptions)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 --import Html.Events exposing (..)
+
+import Time
 
 import Api
 import Models exposing (LogEntry)
@@ -25,6 +27,7 @@ type Msg
     = Fetch
     | FetchSucceed LogEntry
     | FetchFail Api.Error
+    | CurrentTime Time.Time
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -38,12 +41,19 @@ update msg model =
     FetchFail error ->
         (model, Cmd.none)
 
+    CurrentTime time ->
+        update Fetch model
+
 view : Model -> Html Msg
 view model =
   div [ class "row" ]
         [ div [ class "col s12" ]
             [ infoView model.entry ]
         ]
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Time.every Time.minute CurrentTime
 
 infoView : Maybe LogEntry -> Html Msg
 infoView maybeEntry =

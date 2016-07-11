@@ -17,7 +17,7 @@ main =
     { init = init
     , view = view
     , update = (\msg model -> withSetStorage (Debug.log "model" (update msg model)) )
-    , subscriptions = \_ -> Sub.none
+    , subscriptions = subscriptions
     }
 
 port setStorage : PersistedModel -> Cmd msg
@@ -103,6 +103,9 @@ view model =
         , App.map ChartsMsg (Charts.view model.chartsModel)
         ]
 
---subscriptions : Model -> Sub Msg
---subscriptions model =
---  Sub.map ReceiptListMsg (ReceiptList.subscriptions model.receiptList)
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Sub.map CurrentMsg (Current.subscriptions model.currentModel)
+        , Sub.map ChartsMsg (Charts.subscriptions model.chartsModel)
+        ]

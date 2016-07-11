@@ -21,6 +21,7 @@
                 localStorage.setItem('elm-main-state', JSON.stringify(state));
             });
 
+            var charts = {};
             main.ports.drawChart.subscribe(function(chartData) {
                 console.log('chart data', chartData);
                 var ctx = document.getElementById(chartData.canvasId);
@@ -59,7 +60,7 @@
                     ]
                 };
 
-                var chartInstance = new Chart(ctx, {
+                var chart = new Chart(ctx, {
                     type: 'line',
                     data: data,
                     options: {
@@ -81,6 +82,11 @@
                     }
                 });
 
+                if (charts[chartData.canvasId]) {
+                    charts[chartData.canvasId].destroy();
+                }
+
+                charts[chartData.canvasId] = chart;
             });
         </script>
     </body>

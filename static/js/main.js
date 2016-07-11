@@ -8597,6 +8597,9 @@ var _user$project$Charts$init = F2(
 		};
 		return {ctor: '_Tuple2', _0: model, _1: cmd};
 	});
+var _user$project$Charts$subscriptions = function (model) {
+	return A2(_elm_lang$core$Time$every, 20 * _elm_lang$core$Time$second, _user$project$Charts$CurrentTime);
+};
 var _user$project$Charts$FetchFail = function (a) {
 	return {ctor: 'FetchFail', _0: a};
 };
@@ -8783,37 +8786,52 @@ var _user$project$Current$emptyModel = {entry: _elm_lang$core$Maybe$Nothing};
 var _user$project$Current$Model = function (a) {
 	return {entry: a};
 };
+var _user$project$Current$CurrentTime = function (a) {
+	return {ctor: 'CurrentTime', _0: a};
+};
+var _user$project$Current$subscriptions = function (model) {
+	return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$minute, _user$project$Current$CurrentTime);
+};
 var _user$project$Current$FetchFail = function (a) {
 	return {ctor: 'FetchFail', _0: a};
 };
 var _user$project$Current$FetchSucceed = function (a) {
 	return {ctor: 'FetchSucceed', _0: a};
 };
+var _user$project$Current$Fetch = {ctor: 'Fetch'};
 var _user$project$Current$update = F2(
 	function (msg, model) {
-		var _p2 = msg;
-		switch (_p2.ctor) {
-			case 'Fetch':
-				return {
-					ctor: '_Tuple2',
-					_0: model,
-					_1: A2(_user$project$Api$fetchLast, _user$project$Current$FetchFail, _user$project$Current$FetchSucceed)
-				};
-			case 'FetchSucceed':
-				return {
-					ctor: '_Tuple2',
-					_0: _elm_lang$core$Native_Utils.update(
-						model,
-						{
-							entry: _elm_lang$core$Maybe$Just(_p2._0)
-						}),
-					_1: _elm_lang$core$Platform_Cmd$none
-				};
-			default:
-				return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+		update:
+		while (true) {
+			var _p2 = msg;
+			switch (_p2.ctor) {
+				case 'Fetch':
+					return {
+						ctor: '_Tuple2',
+						_0: model,
+						_1: A2(_user$project$Api$fetchLast, _user$project$Current$FetchFail, _user$project$Current$FetchSucceed)
+					};
+				case 'FetchSucceed':
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{
+								entry: _elm_lang$core$Maybe$Just(_p2._0)
+							}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
+				case 'FetchFail':
+					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+				default:
+					var _v2 = _user$project$Current$Fetch,
+						_v3 = model;
+					msg = _v2;
+					model = _v3;
+					continue update;
+			}
 		}
 	});
-var _user$project$Current$Fetch = {ctor: 'Fetch'};
 var _user$project$Current$init = A2(_user$project$Current$update, _user$project$Current$Fetch, _user$project$Current$emptyModel);
 
 var _user$project$Main$persistedModel = function (model) {
@@ -8927,6 +8945,20 @@ var _user$project$Main$view = function (model) {
 				_user$project$Charts$view(model.chartsModel))
 			]));
 };
+var _user$project$Main$subscriptions = function (model) {
+	return _elm_lang$core$Platform_Sub$batch(
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$core$Platform_Sub$map,
+				_user$project$Main$CurrentMsg,
+				_user$project$Current$subscriptions(model.currentModel)),
+				A2(
+				_elm_lang$core$Platform_Sub$map,
+				_user$project$Main$ChartsMsg,
+				_user$project$Charts$subscriptions(model.chartsModel))
+			]));
+};
 var _user$project$Main$main = {
 	main: _elm_lang$html$Html_App$programWithFlags(
 		{
@@ -8940,9 +8972,7 @@ var _user$project$Main$main = {
 							'model',
 							A2(_user$project$Main$update, msg, model)));
 				}),
-			subscriptions: function (_p8) {
-				return _elm_lang$core$Platform_Sub$none;
-			}
+			subscriptions: _user$project$Main$subscriptions
 		}),
 	flags: _elm_lang$core$Json_Decode$oneOf(
 		_elm_lang$core$Native_List.fromArray(

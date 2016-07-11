@@ -1,4 +1,4 @@
-port module Charts exposing (Model, Msg, init, update, view, range, end)
+port module Charts exposing (Model, Msg, init, update, view, subscriptions, range, end)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -104,6 +104,10 @@ view model =
             , chartView "CO2" "co2"
             ]
         ]
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Time.every (20 * Time.second) CurrentTime
 
 type alias ChartValue =
     { value : Float

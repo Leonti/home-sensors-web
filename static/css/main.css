@@ -5,3 +5,7 @@
 .chart-container {
     height: 400px;
 }
+
+select {
+    display: inline-block;
+}

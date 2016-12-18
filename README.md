@@ -1,7 +1,7 @@
 # home-sensors-web
 Web module for home sensors db  
 
-sudo pip install flask  
+sudo pip install flask flask_cors  
 
 sudo cp sensor-web.service /lib/systemd/system/sensor-web.service  
 

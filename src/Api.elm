@@ -2,31 +2,30 @@ module Api exposing (Error, fetchLogs, fetchLast)
 
 import Http
 import Models exposing (..)
-import Task
 
 
 baseUrl : String
 baseUrl =
-    "http://192.168.0.106:5000"
+    "http://192.168.0.104:5000"
 
 
 type Error
     = Error String
 
 
-fetchLast : (Error -> msg) -> (LogEntry -> msg) -> Cmd msg
-fetchLast fetchFail fetchSucceed =
-    Task.perform (handleError transformHttpError fetchFail) fetchSucceed (Http.get Models.logDecoder (baseUrl ++ "/last"))
+fetchLast : (Result Error LogEntry -> msg) -> Cmd msg
+fetchLast handler =
+    Http.send (transformResultHandler handler) (Http.get (baseUrl ++ "/last") Models.logDecoder)
 
 
-fetchLogs : Maybe Int -> Maybe Int -> (Error -> msg) -> (List LogEntry -> msg) -> Cmd msg
-fetchLogs start end fetchFail fetchSucceed =
-    Task.perform (handleError transformHttpError fetchFail) fetchSucceed (fetchLogsGet start end)
+fetchLogs : Maybe Int -> Maybe Int -> (Result Error (List LogEntry) -> msg) -> Cmd msg
+fetchLogs start end handler =
+    Http.send (transformResultHandler handler) (fetchLogsGet start end)
 
 
-fetchLogsGet : Maybe Int -> Maybe Int -> Task.Task Http.Error (List LogEntry)
+fetchLogsGet : Maybe Int -> Maybe Int -> Http.Request (List LogEntry)
 fetchLogsGet start end =
-    Http.get Models.logsDecoder (baseUrl ++ "/log?start=" ++ (toStringTime start) ++ "&end=" ++ (toStringTime end))
+    Http.get (baseUrl ++ "/log?start=" ++ (toStringTime start) ++ "&end=" ++ (toStringTime end)) Models.logsDecoder
 
 
 toStringTime : Maybe Int -> String
@@ -34,9 +33,9 @@ toStringTime time =
     (Maybe.withDefault "" (Maybe.map (\t -> toString t) time))
 
 
-handleError : (Http.Error -> Error) -> (Error -> msg) -> Http.Error -> msg
-handleError toError toMsg httpError =
-    toMsg <| toError httpError
+transformResultHandler : (Result Error a -> msg) -> Result Http.Error a -> msg
+transformResultHandler toMsg result =
+    toMsg <| Result.mapError transformHttpError result
 
 
 transformHttpError : Http.Error -> Error
@@ -48,8 +47,11 @@ transformHttpError httpError =
         Http.NetworkError ->
             Error "NetworkError"
 
-        Http.UnexpectedPayload desc ->
-            Error <| "UnexpectedPayload " ++ desc
+        Http.BadPayload desc response ->
+            Error <| "BadPayload " ++ desc ++ " " ++ response.body
 
-        Http.BadResponse code desc ->
-            Error <| "BadResponse " ++ (toString code) ++ " " ++ desc
+        Http.BadStatus response ->
+            Error <| "BadStatus " ++ " " ++ response.body
+
+        Http.BadUrl desc ->
+            Error <| "BadUrl " ++ " " ++ desc

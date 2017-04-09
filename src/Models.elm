@@ -1,6 +1,6 @@
 module Models exposing (LogEntry, LogRange(..), logDecoder, logsDecoder, rangeToString, stringToRange)
 
-import Json.Decode exposing ((:=))
+import Json.Decode exposing (field)
 import Json.Decode as Json
 
 
@@ -42,11 +42,11 @@ type alias LogEntry =
 
 logDecoder : Json.Decoder LogEntry
 logDecoder =
-    Json.object4 LogEntry
-        ("temperature" := Json.float)
-        ("humidity" := Json.float)
-        ("co2" := Json.int)
-        ("timestamp" := Json.int)
+    Json.map4 LogEntry
+        (field "temperature" Json.float)
+        (field "humidity" Json.float)
+        (field "co2" Json.int)
+        (field "timestamp" Json.int)
 
 
 logsDecoder : Json.Decoder (List LogEntry)

@@ -1,7 +1,6 @@
 port module Main exposing (..)
 
 import Html exposing (..)
-import Html.App as App
 
 
 --import Html.Events exposing (..)
@@ -13,9 +12,9 @@ import Charts
 import Models exposing (LogRange(..), stringToRange, rangeToString)
 
 
-main : Program (Maybe PersistedModel)
+main : Program (Maybe PersistedModel) Model Msg
 main =
-    App.programWithFlags
+    Html.programWithFlags
         { init = init
         , view = view
         , update = (\msg model -> withSetStorage (Debug.log "model" (update msg model)))
@@ -129,8 +128,8 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div [ id "container" ]
-        [ App.map CurrentMsg (Current.view model.currentModel)
-        , App.map ChartsMsg (Charts.view model.chartsModel)
+        [ Html.map CurrentMsg (Current.view model.currentModel)
+        , Html.map ChartsMsg (Charts.view model.chartsModel)
         ]
 
 

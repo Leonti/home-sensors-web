@@ -29,8 +29,7 @@ init =
 
 type Msg
     = Fetch
-    | FetchSucceed LogEntry
-    | FetchFail Api.Error
+    | FetchResult (Result Api.Error LogEntry)
     | CurrentTime Time.Time
 
 
@@ -38,12 +37,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Fetch ->
-            ( model, Api.fetchLast FetchFail FetchSucceed )
+            ( model, Api.fetchLast FetchResult )
 
-        FetchSucceed entry ->
+        FetchResult (Ok entry) ->
             ( { model | entry = Just entry }, Cmd.none )
 
-        FetchFail error ->
+        FetchResult (Err error) ->
             ( model, Cmd.none )
 
         CurrentTime time ->

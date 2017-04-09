@@ -29,7 +29,7 @@ init range end =
             }
 
         cmd =
-            Task.perform TimeFail CurrentTime Time.now
+            Task.perform CurrentTime Time.now
     in
         ( model, cmd )
 
@@ -61,8 +61,7 @@ start model =
 
 type Msg
     = Fetch
-    | FetchSucceed (List LogEntry)
-    | FetchFail Api.Error
+    | FetchResult (Result Api.Error (List LogEntry))
     | CurrentTime Time.Time
     | TimeFail String
     | DrawCharts
@@ -72,12 +71,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Fetch ->
-            ( model, Api.fetchLogs (start model) model.end FetchFail FetchSucceed )
+            ( model, Api.fetchLogs (start model) model.end FetchResult )
 
-        FetchSucceed entries ->
+        FetchResult (Ok entries) ->
             update DrawCharts { model | entries = entries }
 
-        FetchFail error ->
+        FetchResult (Err error) ->
             ( model, Cmd.none )
 
         CurrentTime time ->
